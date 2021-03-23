@@ -2,6 +2,7 @@ package redq
 
 import (
 	"github.com/gomodule/redigo/redis"
+	"sync/atomic"
 )
 
 type RedQueue struct {
@@ -9,7 +10,7 @@ type RedQueue struct {
 	waitingList string
 	pendingList string
 	pool        *redis.Pool
-	closed      bool
+	closed      int32
 }
 
 func (rq *RedQueue) recover() (err error) {
@@ -28,7 +29,7 @@ func (rq *RedQueue) recover() (err error) {
 }
 
 func (rq *RedQueue) Close() (err error) {
-	rq.closed = true
+	atomic.StoreInt32(&rq.closed, 1)
 	return
 }
 

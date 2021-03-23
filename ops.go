@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/gomodule/redigo/redis"
+	"sync/atomic"
 )
 
 var ErrClosed = errors.New("queue closed")
@@ -44,7 +45,7 @@ func (rq *RedQueue) Get(ctx context.Context) (qm QueuedMessage, err error) {
 	defer conn.Close()
 
 	var raw []byte
-	for ctx.Err() == nil && !rq.closed {
+	for ctx.Err() == nil && atomic.LoadInt32(&rq.closed) == 0 {
 		raw, err = redis.Bytes(conn.Do("BRPOPLPUSH", rq.waitingList, rq.pendingList, 2))
 		if err == redis.ErrNil {
 			err = nil
